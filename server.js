@@ -64,12 +64,13 @@ async function getGitHubFile() {
       console.log('📝 File is plain text, converting to JSON format...');
       const lines = content.split('\n').filter(line => line.trim() !== '');
       tokens = lines.map((line, index) => {
-        // Check if line contains tab separator (name\ttoken\ttag format or name\ttoken format)
+        // Check if line contains tab separator (name\ttoken\ttag\tdate format or name\ttoken format)
         if (line.includes('\t')) {
           const parts = line.split('\t');
           const name = parts[0] || `Token ${index + 1}`;
           const value = parts[1] || '';
           const tag = parts[2] || ''; // Tag is optional
+          const createdAt = parts[3] || new Date().toISOString(); // Date is optional, use current if not present
           
           // Create consistent ID based on token value (first 10 chars + last 10 chars)
           const idBase = value.trim().substring(0, 10) + value.trim().substring(Math.max(0, value.trim().length - 10));
@@ -79,7 +80,7 @@ async function getGitHubFile() {
             name: name.trim() || `Token ${index + 1}`,
             value: value.trim(),
             tag: tag.trim(),
-            createdAt: new Date().toISOString()
+            createdAt: createdAt.trim() || new Date().toISOString()
           };
         } else {
           // Plain token without name
@@ -132,15 +133,12 @@ async function updateGitHubFile(tokens, sha, message) {
       // Save as JSON format
       fileContent = JSON.stringify(tokens, null, 2);
     } else {
-      // Save as plain text format with name, token, and optional tag (tab-separated)
-      // Format: name\ttoken or name\ttoken\ttag
+      // Save as plain text format with name, token, optional tag, and date (tab-separated)
+      // Format: name\ttoken\ttag\tdate
       fileContent = tokens.map(t => {
-        // Only include tag if it exists and is not empty
-        if (t.tag && t.tag.trim() !== '') {
-          return `${t.name}\t${t.value}\t${t.tag}`;
-        } else {
-          return `${t.name}\t${t.value}`;
-        }
+        const tag = (t.tag && t.tag.trim() !== '') ? t.tag : '';
+        const date = t.createdAt || new Date().toISOString();
+        return `${t.name}\t${t.value}\t${tag}\t${date}`;
       }).join('\n');
     }
     
