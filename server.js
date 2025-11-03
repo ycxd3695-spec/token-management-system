@@ -158,6 +158,12 @@ async function updateGitHubFile(tokens, sha, message) {
     return response.data;
   } catch (error) {
     console.error('Error updating GitHub file:', error.response?.data || error.message);
+    console.error('Full error details:', {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      message: error.message
+    });
     throw error;
   }
 }
@@ -251,10 +257,12 @@ app.post('/api/tokens', async (req, res) => {
     });
   } catch (error) {
     console.error('Error adding token:', error.message);
+    console.error('Full error:', error.response?.data || error);
     res.status(500).json({ 
       success: false, 
       message: 'Failed to add token',
-      error: error.message 
+      error: error.message,
+      details: error.response?.data?.message || 'Unknown error'
     });
   }
 });
