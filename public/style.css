@@ -1,0 +1,488 @@
+/**
+ * Token Management System - Custom Styles
+ * Additional styling beyond Tailwind CSS
+ */
+
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Token Card Animation */
+.token-card {
+    animation: slideIn 0.3s ease-out;
+}
+
+.token-card:hover {
+    background-color: #f9fafb !important;
+    transition: background-color 0.2s ease;
+}
+
+/* Token Table Styles */
+table {
+    border-spacing: 0;
+}
+
+table thead tr {
+    background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+}
+
+table tbody tr {
+    transition: all 0.2s ease;
+}
+
+table tbody tr:hover {
+    background-color: #f9fafb;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.75rem;
+}
+
+table td {
+    vertical-align: middle;
+}
+
+/* Masked Token Style */
+.font-mono {
+    letter-spacing: 2px;
+    font-size: 0.95rem;
+}
+
+/* Search and Filter Styles */
+#searchInput {
+    transition: all 0.3s ease;
+}
+
+#searchInput:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    border-color: #6366f1;
+}
+
+#clearSearchBtn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#clearSearchBtn:hover {
+    transform: scale(1.1);
+}
+
+#sortFilter {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#sortFilter:hover {
+    border-color: #6366f1;
+}
+
+#sortFilter:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Filter Stats Animation */
+#filterStats {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Search Highlight Effect */
+@keyframes highlight {
+    0% {
+        background-color: #fef3c7;
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.search-highlight {
+    animation: highlight 1s ease-out;
+}
+
+/* Status Banner Animations */
+.status-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.status-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.status-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* Button Hover Effects */
+.btn-delete {
+    transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+    transform: scale(1.05);
+}
+
+.btn-delete:active {
+    transform: scale(0.95);
+}
+
+/* Loading Spinner Animation */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+/* Token Value Display */
+.token-value {
+    font-family: 'Courier New', monospace;
+    background-color: #f8fafc;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    border-left: 3px solid #6366f1;
+    word-break: break-all;
+}
+
+/* Input Focus Effect */
+#tokenInput:focus {
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Card Shadows */
+.shadow-custom {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 
+                0 2px 4px -1px rgba(0, 0, 0, 0.06),
+                0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Design Enhancements */
+@media (max-width: 768px) {
+    .token-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .token-info {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+    
+    .token-actions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+/* Copy to Clipboard Button Animation */
+.copy-feedback {
+    animation: pulse 0.5s ease;
+}
+
+/* Gradient Background */
+.gradient-bg {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Token Card Hover Effect */
+.token-card-container {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.token-card-container:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* Delete Button Warning Effect */
+.btn-delete {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-delete::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.btn-delete:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+/* Smooth Transitions */
+* {
+    transition-property: background-color, border-color, color, fill, stroke, opacity, box-shadow, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button, input {
+    transition-duration: 200ms;
+}
+
+/* Dark Mode Styles */
+body.dark-mode {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%) !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode header {
+    background-color: #2d3748 !important;
+    border-bottom: 1px solid #4a5568;
+}
+
+body.dark-mode h1,
+body.dark-mode h2,
+body.dark-mode .text-gray-800 {
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .bg-white {
+    background-color: #2d3748 !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .text-gray-600,
+body.dark-mode .text-gray-700 {
+    color: #cbd5e0 !important;
+}
+
+body.dark-mode input,
+body.dark-mode select {
+    background-color: #4a5568 !important;
+    color: #e2e8f0 !important;
+    border-color: #4a5568 !important;
+}
+
+body.dark-mode input::placeholder {
+    color: #a0aec0 !important;
+}
+
+body.dark-mode table thead tr {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%) !important;
+}
+
+body.dark-mode table tbody tr {
+    border-color: #4a5568 !important;
+}
+
+body.dark-mode table tbody tr:hover {
+    background-color: #4a5568 !important;
+}
+
+body.dark-mode .border-gray-200,
+body.dark-mode .border-gray-300 {
+    border-color: #4a5568 !important;
+}
+
+body.dark-mode .bg-gray-50,
+body.dark-mode .bg-gray-100 {
+    background-color: #4a5568 !important;
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode .bg-indigo-50 {
+    background-color: #4c51bf !important;
+}
+
+body.dark-mode .text-indigo-800 {
+    color: #e0e7ff !important;
+}
+
+body.dark-mode footer {
+    background-color: #2d3748 !important;
+    border-top: 1px solid #4a5568;
+}
+
+body.dark-mode .font-mono {
+    color: #cbd5e0 !important;
+}
+
+/* Bulk Selection Highlight */
+.token-checkbox:checked + td {
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+/* Export Menu */
+#exportMenu {
+    animation: slideIn 0.2s ease-out;
+}
+
+#exportMenu button {
+    transition: background-color 0.2s ease;
+}
+
+#exportMenu button:hover {
+    background-color: #f3f4f6;
+}
+
+body.dark-mode #exportMenu {
+    background-color: #2d3748 !important;
+    border-color: #4a5568 !important;
+}
+
+body.dark-mode #exportMenu button {
+    color: #e2e8f0 !important;
+}
+
+body.dark-mode #exportMenu button:hover {
+    background-color: #4a5568 !important;
+}
+
+/* Expired Token Styles */
+.bg-red-50 {
+    background-color: #fef2f2 !important;
+}
+
+.border-red-200 {
+    border-color: #fecaca !important;
+}
+
+.bg-yellow-50 {
+    background-color: #fefce8 !important;
+}
+
+.border-yellow-200 {
+    border-color: #fef08a !important;
+}
+
+body.dark-mode .bg-red-50 {
+    background-color: #7f1d1d !important;
+}
+
+body.dark-mode .border-red-200 {
+    border-color: #991b1b !important;
+}
+
+body.dark-mode .bg-yellow-50 {
+    background-color: #713f12 !important;
+}
+
+body.dark-mode .border-yellow-200 {
+    border-color: #854d0e !important;
+}
+
+/* Expired Token Animation */
+@keyframes pulse-red {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+}
+
+.bg-red-50:hover {
+    animation: pulse-red 2s infinite;
+}
+
+/* Table Styles */
+table {
+    border-spacing: 0;
+}
+
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* Token visibility toggle */
+#tokensTableBody span[id^="token-"] {
+    min-width: 150px;
+    display: inline-block;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+    table {
+        font-size: 0.875rem;
+    }
+    
+    th, td {
+        padding: 0.5rem !important;
+    }
+    
+    .hidden {
+        display: none !important;
+    }
+}

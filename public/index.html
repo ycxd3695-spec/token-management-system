@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Management System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen transition-colors duration-300">
+    <!-- Header -->
+    <header class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-shield-alt text-indigo-600 text-3xl"></i>
+                    <h1 class="text-2xl font-bold text-gray-800">Token Management System</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Dark Mode Toggle -->
+                    <button 
+                        id="darkModeToggle"
+                        class="p-2 rounded-lg hover:bg-gray-100 transition"
+                        title="Toggle Dark Mode"
+                    >
+                        <i class="fas fa-moon text-gray-600 text-xl"></i>
+                    </button>
+                    <div class="flex items-center space-x-2">
+                        <i class="fab fa-github text-gray-600 text-2xl"></i>
+                        <span class="text-sm text-gray-600">GitHub Sync</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Status Banner -->
+        <div id="statusBanner" class="hidden mb-6 p-4 rounded-lg shadow-md">
+            <p id="statusMessage" class="text-center font-medium"></p>
+        </div>
+
+        <!-- Add Token Section -->
+        <section class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                <i class="fas fa-plus-circle text-indigo-600 mr-2"></i>
+                Add New Token
+            </h2>
+            <form id="addTokenForm" class="flex flex-col gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label for="nameInput" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-user mr-1"></i>Name
+                        </label>
+                        <input 
+                            type="text" 
+                            id="nameInput" 
+                            placeholder="Enter name (e.g., Vishal, DevTeamBot)" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label for="tokenInput" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-key mr-1"></i>Token
+                        </label>
+                        <input 
+                            type="text" 
+                            id="tokenInput" 
+                            placeholder="Enter your token here..." 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                            required
+                        >
+                    </div>
+                    <div>
+                        <label for="tagInput" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-tag mr-1"></i>Tag (Optional)
+                        </label>
+                        <select 
+                            id="tagInput" 
+                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        >
+                            <option value="">No Tag</option>
+                            <option value="production">🔴 Production</option>
+                            <option value="development">🟢 Development</option>
+                            <option value="testing">🟡 Testing</option>
+                            <option value="staging">🟠 Staging</option>
+                            <option value="personal">🔵 Personal</option>
+                        </select>
+                    </div>
+                </div>
+                <button 
+                    type="submit" 
+                    id="addTokenBtn"
+                    class="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                >
+                    <i class="fas fa-plus"></i>
+                    <span>Add Token</span>
+                </button>
+            </form>
+        </section>
+
+        <!-- Tokens List Section -->
+        <section class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <i class="fas fa-list text-indigo-600 mr-2"></i>
+                    Stored Tokens
+                    <span id="tokenCount" class="ml-3 px-3 py-1 bg-indigo-100 text-indigo-800 text-sm rounded-full">0</span>
+                </h2>
+                <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                    <!-- Search/Filter Input -->
+                    <div class="relative flex-1 md:flex-initial">
+                        <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Search by name or token..." 
+                            class="w-full md:w-64 pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+                        >
+                        <button 
+                            id="clearSearchBtn"
+                            class="hidden absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            title="Clear search"
+                        >
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <!-- Tag Filter -->
+                    <select 
+                        id="tagFilter" 
+                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white text-sm"
+                    >
+                        <option value="">All Tags</option>
+                        <option value="production">🔴 Production</option>
+                        <option value="development">🟢 Development</option>
+                        <option value="testing">🟡 Testing</option>
+                        <option value="staging">🟠 Staging</option>
+                        <option value="personal">🔵 Personal</option>
+                    </select>
+                    <!-- Expiry Filter -->
+                    <select 
+                        id="expiryFilter" 
+                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white text-sm"
+                    >
+                        <option value="">All Tokens</option>
+                        <option value="expired">⚠️ Expired (30+ days)</option>
+                        <option value="expiring">⏰ Expiring Soon (25-29 days)</option>
+                        <option value="active">✅ Active (0-24 days)</option>
+                    </select>
+                    <!-- Sort Dropdown -->
+                    <select 
+                        id="sortFilter" 
+                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white text-sm"
+                    >
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="name-asc">Name (A-Z)</option>
+                        <option value="name-desc">Name (Z-A)</option>
+                    </select>
+                    <!-- Action Buttons -->
+                    <div class="relative inline-block">
+                        <button 
+                            id="exportBtn"
+                            class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm flex items-center space-x-1"
+                            title="Export tokens"
+                        >
+                            <i class="fas fa-download"></i>
+                            <span class="hidden lg:inline">Export</span>
+                            <i class="fas fa-chevron-down ml-1 text-xs"></i>
+                        </button>
+                        <div id="exportMenu" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                            <button 
+                                onclick="exportToCSV()"
+                                class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 rounded-t-lg"
+                            >
+                                <i class="fas fa-file-excel text-green-600"></i>
+                                <span>Export as CSV (Excel)</span>
+                            </button>
+                            <button 
+                                onclick="exportToJSON()"
+                                class="w-full px-4 py-2 text-left hover:bg-gray-100 flex items-center space-x-2 rounded-b-lg"
+                            >
+                                <i class="fas fa-file-code text-blue-600"></i>
+                                <span>Export as JSON</span>
+                            </button>
+                        </div>
+                    </div>
+                    <button 
+                        id="importBtn"
+                        class="px-3 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition text-sm flex items-center space-x-1"
+                        title="Import tokens"
+                    >
+                        <i class="fas fa-upload"></i>
+                        <span class="hidden lg:inline">Import</span>
+                    </button>
+                    <button 
+                        id="refreshBtn"
+                        class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm flex items-center space-x-1"
+                    >
+                        <i class="fas fa-sync-alt"></i>
+                        <span class="hidden lg:inline">Refresh</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Filter Stats & Bulk Actions -->
+            <div class="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                <div class="flex flex-wrap gap-2">
+                    <div id="filterStats" class="hidden p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <i class="fas fa-filter mr-2"></i>
+                            Showing <span id="filteredCount" class="font-semibold">0</span> of <span id="totalCount" class="font-semibold">0</span> tokens
+                        </p>
+                    </div>
+                    <!-- Expiry Stats -->
+                    <div id="expiryStats" class="hidden flex gap-2">
+                        <div class="p-2 bg-red-50 border border-red-200 rounded-lg">
+                            <p class="text-xs text-red-700">
+                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                <span id="expiredCount" class="font-semibold">0</span> Expired
+                            </p>
+                        </div>
+                        <div class="p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                            <p class="text-xs text-yellow-700">
+                                <i class="fas fa-clock mr-1"></i>
+                                <span id="expiringCount" class="font-semibold">0</span> Expiring Soon
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div id="bulkActions" class="hidden flex items-center gap-2">
+                    <span class="text-sm text-gray-600">
+                        <span id="selectedCount" class="font-semibold">0</span> selected
+                    </span>
+                    <button 
+                        id="deleteSelectedBtn"
+                        class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm flex items-center space-x-1"
+                    >
+                        <i class="fas fa-trash"></i>
+                        <span>Delete Selected</span>
+                    </button>
+                    <button 
+                        id="deselectAllBtn"
+                        class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition text-sm"
+                    >
+                        Deselect All
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center py-12">
+                <i class="fas fa-spinner fa-spin text-indigo-600 text-4xl mb-4"></i>
+                <p class="text-gray-600">Loading tokens from GitHub...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden text-center py-12">
+                <i class="fas fa-inbox text-gray-300 text-6xl mb-4"></i>
+                <p class="text-gray-600 text-lg">No tokens found</p>
+                <p class="text-gray-500 text-sm mt-2">Add your first token to get started!</p>
+            </div>
+
+            <!-- Tokens List -->
+            <div id="tokensList" class="hidden">
+                <!-- Tokens Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full border-collapse">
+                        <thead>
+                            <tr class="bg-indigo-50 border-b-2 border-indigo-200">
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700" style="width: 40px;">
+                                    <input 
+                                        type="checkbox" 
+                                        id="selectAllCheckbox"
+                                        class="w-4 h-4 text-indigo-600 rounded focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+                                        title="Select all"
+                                    >
+                                </th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                                    <i class="fas fa-user mr-2 text-indigo-600"></i>Name
+                                </th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                                    <i class="fas fa-key mr-2 text-indigo-600"></i>Token
+                                </th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                                    <i class="fas fa-tag mr-2 text-indigo-600"></i>Tag
+                                </th>
+                                <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                                    <i class="fas fa-calendar mr-2 text-indigo-600"></i>Added On
+                                </th>
+                                <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                                    <i class="fas fa-cog mr-2 text-indigo-600"></i>Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tokensTableBody">
+                            <!-- Tokens will be dynamically inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-12 py-6 shadow-inner">
+        <div class="container mx-auto px-4 text-center text-gray-600">
+            <p>&copy; 2025 Token Management System. All rights reserved.</p>
+            <p class="text-sm mt-2">Powered by GitHub API</p>
+        </div>
+    </footer>
+
+    <!-- Hidden Import File Input -->
+    <input type="file" id="importFileInput" accept=".json" class="hidden">
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>
