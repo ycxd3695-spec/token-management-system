@@ -64,9 +64,13 @@ async function getGitHubFile() {
       console.log('📝 File is plain text, converting to JSON format...');
       const lines = content.split('\n').filter(line => line.trim() !== '');
       tokens = lines.map((line, index) => {
-        // Check if line contains tab separator (name\ttoken format)
+        // Check if line contains tab separator (name\ttoken\ttag format or name\ttoken format)
         if (line.includes('\t')) {
-          const [name, value] = line.split('\t');
+          const parts = line.split('\t');
+          const name = parts[0] || `Token ${index + 1}`;
+          const value = parts[1] || '';
+          const tag = parts[2] || ''; // Tag is optional
+          
           // Create consistent ID based on token value (first 10 chars + last 10 chars)
           const idBase = value.trim().substring(0, 10) + value.trim().substring(Math.max(0, value.trim().length - 10));
           const consistentId = Buffer.from(idBase).toString('base64').replace(/[^a-zA-Z0-9]/g, '');
@@ -74,6 +78,7 @@ async function getGitHubFile() {
             id: consistentId,
             name: name.trim() || `Token ${index + 1}`,
             value: value.trim(),
+            tag: tag.trim(),
             createdAt: new Date().toISOString()
           };
         } else {
@@ -86,6 +91,7 @@ async function getGitHubFile() {
             id: consistentId,
             name: `Token ${index + 1}`,
             value: tokenValue,
+            tag: '',
             createdAt: new Date().toISOString()
           };
         }
@@ -126,9 +132,12 @@ async function updateGitHubFile(tokens, sha, message) {
       // Save as JSON format
       fileContent = JSON.stringify(tokens, null, 2);
     } else {
-      // Save as plain text format with name and token (tab-separated)
-      // Format: name\ttoken
-      fileContent = tokens.map(t => `${t.name}\t${t.value}`).join('\n');
+      // Save as plain text format with name, token, and tag (tab-separated)
+      // Format: name\ttoken\ttag (tag is optional)
+      fileContent = tokens.map(t => {
+        const tag = t.tag || '';
+        return `${t.name}\t${t.value}\t${tag}`;
+      }).join('\n');
     }
     
     // Convert to base64
