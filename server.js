@@ -208,7 +208,7 @@ app.get('/api/tokens', async (req, res) => {
 // POST new token
 app.post('/api/tokens', async (req, res) => {
   try {
-    const { name, token, tag } = req.body;
+    const { name, token, tag, createdAt } = req.body;
     
     // Validate input
     if (!name || name.trim() === '') {
@@ -234,7 +234,7 @@ app.post('/api/tokens', async (req, res) => {
       name: name.trim(),
       value: token.trim(),
       tag: tag || '',
-      createdAt: new Date().toISOString()
+      createdAt: createdAt || new Date().toISOString() // Use provided date or current date
     };
     
     // Check for duplicates

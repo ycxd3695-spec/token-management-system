@@ -22,6 +22,7 @@ const statusMessage = document.getElementById('statusMessage');
 const tokenCount = document.getElementById('tokenCount');
 const searchInput = document.getElementById('searchInput');
 const clearSearchBtn = document.getElementById('clearSearchBtn');
+const dateRangeFilter = document.getElementById('dateRangeFilter');
 const sortFilter = document.getElementById('sortFilter');
 const tagFilter = document.getElementById('tagFilter');
 const expiryFilter = document.getElementById('expiryFilter');
@@ -42,12 +43,26 @@ const selectedCount = document.getElementById('selectedCount');
 const deleteSelectedBtn = document.getElementById('deleteSelectedBtn');
 const deselectAllBtn = document.getElementById('deselectAllBtn');
 
+// WhatsApp Import Elements
+const whatsappImportBtn = document.getElementById('whatsappImportBtn');
+const whatsappImportSection = document.getElementById('whatsappImportSection');
+const closeWhatsappImport = document.getElementById('closeWhatsappImport');
+const whatsappTextarea = document.getElementById('whatsappTextarea');
+const whatsappTagInput = document.getElementById('whatsappTagInput');
+const parseWhatsappBtn = document.getElementById('parseWhatsappBtn');
+const importWhatsappBtn = document.getElementById('importWhatsappBtn');
+const whatsappPreview = document.getElementById('whatsappPreview');
+const previewCount = document.getElementById('previewCount');
+const previewList = document.getElementById('previewList');
+
 // State
 let tokens = [];
 let filteredTokens = [];
 let isLoading = false;
 let currentSearchTerm = '';
 let currentSortOrder = 'newest';
+let currentDateRange = 'all';
+let parsedWhatsappTokens = [];
 let currentTagFilter = '';
 let currentExpiryFilter = '';
 let selectedTokens = new Set();
@@ -71,6 +86,7 @@ function setupEventListeners() {
     refreshBtn.addEventListener('click', handleRefresh);
     searchInput.addEventListener('input', handleSearch);
     clearSearchBtn.addEventListener('click', clearSearch);
+    dateRangeFilter.addEventListener('change', handleDateRangeFilter);
     sortFilter.addEventListener('change', handleSort);
     tagFilter.addEventListener('change', handleTagFilter);
     expiryFilter.addEventListener('change', handleExpiryFilter);
@@ -88,6 +104,12 @@ function setupEventListeners() {
     selectAllCheckbox.addEventListener('change', toggleSelectAll);
     deleteSelectedBtn.addEventListener('click', deleteSelectedTokens);
     deselectAllBtn.addEventListener('click', deselectAll);
+    
+    // WhatsApp Import event listeners
+    whatsappImportBtn.addEventListener('click', showWhatsappImport);
+    closeWhatsappImport.addEventListener('click', hideWhatsappImport);
+    parseWhatsappBtn.addEventListener('click', parseWhatsappMessages);
+    importWhatsappBtn.addEventListener('click', importParsedTokens);
 }
 
 /**
@@ -207,6 +229,28 @@ function renderTokens() {
  */
 function filterAndSortTokens(tokenList, searchTerm, sortOrder) {
     let result = [...tokenList];
+    
+    // Apply date range filter
+    if (currentDateRange && currentDateRange !== 'all') {
+        result = result.filter(token => {
+            const now = new Date();
+            const tokenDate = new Date(token.createdAt);
+            const daysDiff = Math.floor((now - tokenDate) / (1000 * 60 * 60 * 24));
+            
+            switch (currentDateRange) {
+                case 'today':
+                    return daysDiff === 0;
+                case '7days':
+                    return daysDiff <= 7;
+                case '30days':
+                    return daysDiff <= 30;
+                case '90days':
+                    return daysDiff <= 90;
+                default:
+                    return true;
+            }
+        });
+    }
     
     // Apply tag filter
     if (currentTagFilter) {
@@ -688,6 +732,14 @@ function toggleDarkMode() {
 }
 
 /**
+ * Date Range Filter
+ */
+function handleDateRangeFilter(e) {
+    currentDateRange = e.target.value;
+    renderTokens();
+}
+
+/**
  * Tag Filter
  */
 function handleTagFilter(e) {
@@ -915,6 +967,207 @@ async function deleteSelectedTokens() {
     updateUIState(false);
     updateBulkActions();
     showStatus(`Deleted ${deleted} tokens successfully!`, 'success');
+}
+
+/**
+ * WhatsApp Import Functions
+ */
+
+/**
+ * Show WhatsApp import section
+ */
+function showWhatsappImport() {
+    whatsappImportSection.classList.remove('hidden');
+    whatsappTextarea.focus();
+    // Scroll to the section
+    whatsappImportSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/**
+ * Hide WhatsApp import section
+ */
+function hideWhatsappImport() {
+    whatsappImportSection.classList.add('hidden');
+    whatsappTextarea.value = '';
+    whatsappPreview.classList.add('hidden');
+    parsedWhatsappTokens = [];
+    importWhatsappBtn.disabled = true;
+}
+
+/**
+ * Parse WhatsApp messages
+ * Format: [MM/DD/YYYY HH:MM AM/PM] Name: token_value
+ */
+function parseWhatsappMessages() {
+    const text = whatsappTextarea.value.trim();
+    
+    if (!text) {
+        showStatus('Please paste WhatsApp messages first!', 'error');
+        return;
+    }
+    
+    parsedWhatsappTokens = [];
+    const lines = text.split('\n');
+    
+    // WhatsApp format regex: [MM/DD/YYYY HH:MM AM/PM] Name: token
+    const whatsappRegex = /\[(\d{1,2}\/\d{1,2}\/\d{4})\s+(\d{1,2}:\d{2}\s*(?:AM|PM)?)\]\s*([^:]+):\s*(.+)/i;
+    
+    lines.forEach((line, index) => {
+        line = line.trim();
+        if (!line) return;
+        
+        const match = line.match(whatsappRegex);
+        
+        if (match) {
+            const [, dateStr, timeStr, name, token] = match;
+            
+            try {
+                // Parse date: MM/DD/YYYY
+                const [month, day, year] = dateStr.split('/').map(Number);
+                
+                // Parse time: HH:MM AM/PM
+                let [time, period] = timeStr.split(/\s+/);
+                let [hours, minutes] = time.split(':').map(Number);
+                
+                // Convert to 24-hour format
+                if (period) {
+                    if (period.toUpperCase() === 'PM' && hours !== 12) {
+                        hours += 12;
+                    } else if (period.toUpperCase() === 'AM' && hours === 12) {
+                        hours = 0;
+                    }
+                }
+                
+                // Create ISO date string
+                const date = new Date(year, month - 1, day, hours, minutes || 0);
+                const createdAt = date.toISOString();
+                
+                parsedWhatsappTokens.push({
+                    name: name.trim(),
+                    value: token.trim(),
+                    createdAt: createdAt,
+                    originalLine: line
+                });
+            } catch (error) {
+                console.error('Failed to parse line:', line, error);
+            }
+        }
+    });
+    
+    if (parsedWhatsappTokens.length === 0) {
+        showStatus('No valid WhatsApp messages found! Check the format.', 'error');
+        whatsappPreview.classList.add('hidden');
+        importWhatsappBtn.disabled = true;
+        return;
+    }
+    
+    // Show preview
+    previewCount.textContent = parsedWhatsappTokens.length;
+    previewList.innerHTML = '';
+    
+    parsedWhatsappTokens.forEach((token, index) => {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'p-3 bg-white border border-gray-200 rounded-lg text-sm';
+        previewItem.innerHTML = `
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <p class="font-medium text-gray-800">
+                        <i class="fas fa-user text-indigo-600 mr-1"></i>
+                        ${escapeHtml(token.name)}
+                    </p>
+                    <p class="text-gray-600 font-mono text-xs mt-1 truncate">
+                        <i class="fas fa-key text-gray-400 mr-1"></i>
+                        ${escapeHtml(token.value.substring(0, 40))}...
+                    </p>
+                    <p class="text-gray-500 text-xs mt-1">
+                        <i class="fas fa-calendar text-gray-400 mr-1"></i>
+                        ${new Date(token.createdAt).toLocaleString()}
+                    </p>
+                </div>
+                <span class="text-green-600 ml-2">
+                    <i class="fas fa-check-circle"></i>
+                </span>
+            </div>
+        `;
+        previewList.appendChild(previewItem);
+    });
+    
+    whatsappPreview.classList.remove('hidden');
+    importWhatsappBtn.disabled = false;
+    
+    showStatus(`Found ${parsedWhatsappTokens.length} tokens! Review and click "Import Tokens"`, 'success');
+}
+
+/**
+ * Import parsed WhatsApp tokens
+ */
+async function importParsedTokens() {
+    if (parsedWhatsappTokens.length === 0) {
+        showStatus('No tokens to import!', 'error');
+        return;
+    }
+    
+    const tag = whatsappTagInput.value;
+    let imported = 0;
+    let failed = 0;
+    let duplicates = 0;
+    
+    importWhatsappBtn.disabled = true;
+    importWhatsappBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Importing...';
+    
+    for (const token of parsedWhatsappTokens) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/tokens`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: token.name,
+                    token: token.value,
+                    tag: tag,
+                    createdAt: token.createdAt  // Pass the WhatsApp message date
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                imported++;
+            } else if (data.message && data.message.includes('already exists')) {
+                duplicates++;
+            } else {
+                failed++;
+            }
+        } catch (error) {
+            console.error('Failed to import token:', token, error);
+            failed++;
+        }
+    }
+    
+    // Reset button
+    importWhatsappBtn.disabled = false;
+    importWhatsappBtn.innerHTML = '<i class="fas fa-file-import"></i><span>Import Tokens</span>';
+    
+    // Show results
+    let message = `Import complete! ✅ ${imported} imported`;
+    if (duplicates > 0) message += `, ⚠️ ${duplicates} duplicates skipped`;
+    if (failed > 0) message += `, ❌ ${failed} failed`;
+    
+    showStatus(message, imported > 0 ? 'success' : 'error');
+    
+    // Reload tokens and close import section
+    await loadTokens();
+    hideWhatsappImport();
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Make functions available globally

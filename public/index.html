@@ -91,15 +91,107 @@
                         </select>
                     </div>
                 </div>
-                <button 
-                    type="submit" 
-                    id="addTokenBtn"
-                    class="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
-                >
-                    <i class="fas fa-plus"></i>
-                    <span>Add Token</span>
-                </button>
+                <div class="flex gap-3">
+                    <button 
+                        type="submit" 
+                        id="addTokenBtn"
+                        class="flex-1 px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg hover:bg-indigo-700 transition duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                    >
+                        <i class="fas fa-plus"></i>
+                        <span>Add Token</span>
+                    </button>
+                    <button 
+                        type="button"
+                        id="whatsappImportBtn"
+                        class="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-200 flex items-center justify-center space-x-2 shadow-md hover:shadow-lg"
+                        title="Import from WhatsApp"
+                    >
+                        <i class="fab fa-whatsapp"></i>
+                        <span class="hidden sm:inline">WhatsApp Import</span>
+                    </button>
+                </div>
             </form>
+        </section>
+
+        <!-- WhatsApp Bulk Import Section -->
+        <section id="whatsappImportSection" class="hidden bg-white rounded-lg shadow-lg p-6 mb-8 border-2 border-green-400">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-semibold text-gray-800 flex items-center">
+                    <i class="fab fa-whatsapp text-green-600 mr-2 text-2xl"></i>
+                    Import Tokens from WhatsApp
+                </h2>
+                <button 
+                    id="closeWhatsappImport"
+                    class="text-gray-400 hover:text-gray-600 transition"
+                >
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <p class="text-sm text-green-800 mb-2">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <strong>How to use:</strong>
+                </p>
+                <ol class="text-sm text-green-700 ml-6 space-y-1 list-decimal">
+                    <li>Copy messages from WhatsApp (with date and name)</li>
+                    <li>Paste in the text area below</li>
+                    <li>System will automatically extract: Date, Name, and Token</li>
+                </ol>
+                <p class="text-xs text-green-600 mt-3">
+                    <strong>Example format:</strong><br>
+                    <code class="bg-white px-2 py-1 rounded">[10/29/2025 2:11 PM] Ashok Impact: 77f4476fe1b725ead5d5a506ce6dc577</code>
+                </p>
+            </div>
+            <div class="mb-4">
+                <label for="whatsappTextarea" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-clipboard mr-1"></i>Paste WhatsApp Messages
+                </label>
+                <textarea 
+                    id="whatsappTextarea" 
+                    rows="8"
+                    placeholder="Paste your WhatsApp messages here...&#10;&#10;Example:&#10;[10/29/2025 2:11 PM] Ashok Impact: 77f4476fe1b725ead5d5a506ce6dc577&#10;[11/1/2025 9:57 AM] Vishal: a110ec3ad9b6a736bc9b727294539319"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition font-mono text-sm"
+                ></textarea>
+            </div>
+            <div class="mb-4">
+                <label for="whatsappTagInput" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-tag mr-1"></i>Tag for All (Optional)
+                </label>
+                <select 
+                    id="whatsappTagInput" 
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition"
+                >
+                    <option value="">No Tag</option>
+                    <option value="production">🔴 Production</option>
+                    <option value="development">🟢 Development</option>
+                    <option value="testing">🟡 Testing</option>
+                    <option value="staging">🟠 Staging</option>
+                    <option value="personal">🔵 Personal</option>
+                </select>
+            </div>
+            <div id="whatsappPreview" class="hidden mb-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <p class="text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-eye mr-2"></i>Preview: <span id="previewCount" class="text-green-600 font-bold">0</span> tokens detected
+                </p>
+                <div id="previewList" class="space-y-2 max-h-60 overflow-y-auto"></div>
+            </div>
+            <div class="flex gap-3">
+                <button 
+                    id="parseWhatsappBtn"
+                    class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition duration-200 flex items-center justify-center space-x-2"
+                >
+                    <i class="fas fa-search"></i>
+                    <span>Parse & Preview</span>
+                </button>
+                <button 
+                    id="importWhatsappBtn"
+                    class="flex-1 px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition duration-200 flex items-center justify-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    disabled
+                >
+                    <i class="fas fa-file-import"></i>
+                    <span>Import Tokens</span>
+                </button>
+            </div>
         </section>
 
         <!-- Tokens List Section -->
@@ -149,6 +241,18 @@
                         <option value="expired">⚠️ Expired (30+ days)</option>
                         <option value="expiring">⏰ Expiring Soon (25-29 days)</option>
                         <option value="active">✅ Active (0-24 days)</option>
+                    </select>
+                    <!-- Date Range Filter -->
+                    <select 
+                        id="dateRangeFilter" 
+                        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white text-sm"
+                        title="Filter by date range"
+                    >
+                        <option value="all">📅 All Time</option>
+                        <option value="today">📅 Today</option>
+                        <option value="7days">📅 Last 7 Days</option>
+                        <option value="30days">📅 Last 30 Days</option>
+                        <option value="90days">📅 Last 90 Days</option>
                     </select>
                     <!-- Sort Dropdown -->
                     <select 
