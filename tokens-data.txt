@@ -1,2 +1,0 @@
-Sample Token	sample_token_123
-Test Token	test_abc_456
