@@ -132,11 +132,15 @@ async function updateGitHubFile(tokens, sha, message) {
       // Save as JSON format
       fileContent = JSON.stringify(tokens, null, 2);
     } else {
-      // Save as plain text format with name, token, and tag (tab-separated)
-      // Format: name\ttoken\ttag (tag is optional)
+      // Save as plain text format with name, token, and optional tag (tab-separated)
+      // Format: name\ttoken or name\ttoken\ttag
       fileContent = tokens.map(t => {
-        const tag = t.tag || '';
-        return `${t.name}\t${t.value}\t${tag}`;
+        // Only include tag if it exists and is not empty
+        if (t.tag && t.tag.trim() !== '') {
+          return `${t.name}\t${t.value}\t${t.tag}`;
+        } else {
+          return `${t.name}\t${t.value}`;
+        }
       }).join('\n');
     }
     
