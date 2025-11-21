@@ -308,6 +308,67 @@ app.delete('/api/tokens/:id', async (req, res) => {
   }
 });
 
+// PUT update token by ID
+app.put('/api/tokens/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, token, tag, createdAt } = req.body;
+    
+    // Validate input
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Name cannot be empty' 
+      });
+    }
+    
+    if (!token || token.trim() === '') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Token cannot be empty' 
+      });
+    }
+    
+    // Get current tokens
+    const { content: tokens, sha } = await getGitHubFile();
+    
+    // Find token index
+    const tokenIndex = tokens.findIndex(t => t.id === id);
+    
+    if (tokenIndex === -1) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Token not found' 
+      });
+    }
+    
+    // Update token
+    tokens[tokenIndex] = {
+      id: id,
+      name: name.trim(),
+      value: token.trim(),
+      tag: tag || '',
+      createdAt: createdAt || tokens[tokenIndex].createdAt
+    };
+    
+    // Update GitHub file
+    await updateGitHubFile(tokens, sha, `Update token: ${name}`);
+    
+    res.json({ 
+      success: true, 
+      message: 'Token updated successfully',
+      token: tokens[tokenIndex]
+    });
+  } catch (error) {
+    console.error('Error updating token:', error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to update token',
+      error: error.message 
+    });
+  }
+});
+
 // Serve frontend
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));

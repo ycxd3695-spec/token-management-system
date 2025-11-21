@@ -11,6 +11,7 @@ const addTokenForm = document.getElementById('addTokenForm');
 const nameInput = document.getElementById('nameInput');
 const tokenInput = document.getElementById('tokenInput');
 const tagInput = document.getElementById('tagInput');
+const dateInput = document.getElementById('dateInput');
 const addTokenBtn = document.getElementById('addTokenBtn');
 const refreshBtn = document.getElementById('refreshBtn');
 const tokensList = document.getElementById('tokensList');
@@ -55,9 +56,32 @@ const whatsappPreview = document.getElementById('whatsappPreview');
 const previewCount = document.getElementById('previewCount');
 const previewList = document.getElementById('previewList');
 
+// Bulk Delete Elements
+const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+const bulkDeleteSection = document.getElementById('bulkDeleteSection');
+const closeBulkDelete = document.getElementById('closeBulkDelete');
+const bulkDeleteTextarea = document.getElementById('bulkDeleteTextarea');
+const searchDeleteBtn = document.getElementById('searchDeleteBtn');
+const confirmBulkDeleteBtn = document.getElementById('confirmBulkDeleteBtn');
+const bulkDeletePreview = document.getElementById('bulkDeletePreview');
+const deletePreviewCount = document.getElementById('deletePreviewCount');
+const deletePreviewList = document.getElementById('deletePreviewList');
+
+// Edit Modal Elements
+const editModal = document.getElementById('editModal');
+const closeEditModal = document.getElementById('closeEditModal');
+const editTokenForm = document.getElementById('editTokenForm');
+const editNameInput = document.getElementById('editNameInput');
+const editTokenInput = document.getElementById('editTokenInput');
+const editTagInput = document.getElementById('editTagInput');
+const editDateInput = document.getElementById('editDateInput');
+const cancelEditBtn = document.getElementById('cancelEditBtn');
+const saveEditBtn = document.getElementById('saveEditBtn');
+
 // State
 let tokens = [];
 let filteredTokens = [];
+let tokensToDelete = [];
 let isLoading = false;
 let currentSearchTerm = '';
 let currentSortOrder = 'newest';
@@ -67,6 +91,7 @@ let currentTagFilter = '';
 let currentExpiryFilter = '';
 let selectedTokens = new Set();
 let isDarkMode = localStorage.getItem('darkMode') === 'true';
+let currentEditingTokenId = null;
 
 /**
  * Initialize the application
@@ -110,6 +135,24 @@ function setupEventListeners() {
     closeWhatsappImport.addEventListener('click', hideWhatsappImport);
     parseWhatsappBtn.addEventListener('click', parseWhatsappMessages);
     importWhatsappBtn.addEventListener('click', importParsedTokens);
+    
+    // Bulk Delete event listeners
+    bulkDeleteBtn.addEventListener('click', showBulkDelete);
+    closeBulkDelete.addEventListener('click', hideBulkDelete);
+    searchDeleteBtn.addEventListener('click', searchTokensToDelete);
+    confirmBulkDeleteBtn.addEventListener('click', confirmBulkDelete);
+    
+    // Edit modal event listeners
+    closeEditModal.addEventListener('click', closeEditModalHandler);
+    cancelEditBtn.addEventListener('click', closeEditModalHandler);
+    editTokenForm.addEventListener('submit', handleEditToken);
+    
+    // Close edit modal when clicking outside
+    editModal.addEventListener('click', (e) => {
+        if (e.target === editModal) {
+            closeEditModalHandler();
+        }
+    });
 }
 
 /**
@@ -505,6 +548,14 @@ function createTokenRow(token, index) {
                     <span class="hidden lg:inline">Copy</span>
                 </button>
                 <button 
+                    onclick="openEditModal('${token.id}')"
+                    class="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm flex items-center space-x-1"
+                    title="Edit token"
+                >
+                    <i class="fas fa-edit"></i>
+                    <span class="hidden lg:inline">Edit</span>
+                </button>
+                <button 
                     onclick="deleteToken('${token.id}')"
                     class="btn-delete px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition text-sm flex items-center space-x-1"
                     title="Delete token"
@@ -555,6 +606,7 @@ async function handleAddToken(e) {
     const nameValue = nameInput.value.trim();
     const tokenValue = tokenInput.value.trim();
     const tagValue = tagInput.value;
+    const dateValue = dateInput.value;
     
     if (!nameValue) {
         showStatus('Please enter a name', 'error');
@@ -571,16 +623,24 @@ async function handleAddToken(e) {
     try {
         updateUIState(true);
         
+        // Prepare request body
+        const requestBody = { 
+            name: nameValue,
+            token: tokenValue,
+            tag: tagValue
+        };
+        
+        // Add createdAt if date is selected
+        if (dateValue) {
+            requestBody.createdAt = new Date(dateValue).toISOString();
+        }
+        
         const response = await fetch(`${API_BASE_URL}/api/tokens`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ 
-                name: nameValue,
-                token: tokenValue,
-                tag: tagValue
-            })
+            body: JSON.stringify(requestBody)
         });
         
         const data = await response.json();
@@ -594,6 +654,7 @@ async function handleAddToken(e) {
             nameInput.value = '';
             tokenInput.value = '';
             tagInput.value = '';
+            dateInput.value = '';
             nameInput.focus();
             
             showStatus('Token added successfully!', 'success');
@@ -1170,6 +1231,295 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+/**
+ * Bulk Delete Functions
+ */
+
+/**
+ * Show bulk delete section
+ */
+function showBulkDelete() {
+    bulkDeleteSection.classList.remove('hidden');
+    bulkDeleteTextarea.focus();
+    bulkDeleteSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+/**
+ * Hide bulk delete section
+ */
+function hideBulkDelete() {
+    bulkDeleteSection.classList.add('hidden');
+    bulkDeleteTextarea.value = '';
+    bulkDeletePreview.classList.add('hidden');
+    tokensToDelete = [];
+    confirmBulkDeleteBtn.disabled = true;
+}
+
+/**
+ * Search for tokens to delete
+ */
+function searchTokensToDelete() {
+    const text = bulkDeleteTextarea.value.trim();
+    
+    if (!text) {
+        showStatus('Please paste token values first!', 'error');
+        return;
+    }
+    
+    // Parse token values - support multiple formats:
+    // 1. Plain tokens (newline, space, comma separated)
+    // 2. WhatsApp format: [21/11, 10:04 am] Name: token
+    const inputTokens = [];
+    
+    // Split by newlines first
+    const lines = text.split('\n');
+    
+    lines.forEach(line => {
+        line = line.trim();
+        if (!line) return;
+        
+        // Check if it's WhatsApp format with brackets
+        const whatsappMatch = line.match(/\[.*?\].*?:\s*(.+)/);
+        if (whatsappMatch) {
+            // Extract token after the colon
+            const tokenValue = whatsappMatch[1].trim();
+            if (tokenValue) {
+                inputTokens.push(tokenValue);
+            }
+        } else {
+            // Not WhatsApp format, split by space/comma
+            const plainTokens = line
+                .split(/[\s,]+/)
+                .map(t => t.trim())
+                .filter(t => t.length > 0);
+            inputTokens.push(...plainTokens);
+        }
+    });
+    
+    if (inputTokens.length === 0) {
+        showStatus('No valid token values found!', 'error');
+        bulkDeletePreview.classList.add('hidden');
+        confirmBulkDeleteBtn.disabled = true;
+        return;
+    }
+    
+    // Find matching tokens
+    tokensToDelete = [];
+    
+    inputTokens.forEach(inputToken => {
+        const matchedToken = tokens.find(t => {
+            // Case-insensitive partial match or exact match
+            return t.value.toLowerCase().includes(inputToken.toLowerCase()) ||
+                   inputToken.toLowerCase().includes(t.value.toLowerCase());
+        });
+        
+        if (matchedToken && !tokensToDelete.find(t => t.id === matchedToken.id)) {
+            tokensToDelete.push(matchedToken);
+        }
+    });
+    
+    if (tokensToDelete.length === 0) {
+        showStatus('No matching tokens found!', 'error');
+        bulkDeletePreview.classList.add('hidden');
+        confirmBulkDeleteBtn.disabled = true;
+        return;
+    }
+    
+    // Show preview
+    deletePreviewCount.textContent = tokensToDelete.length;
+    deletePreviewList.innerHTML = '';
+    
+    tokensToDelete.forEach((token, index) => {
+        const previewItem = document.createElement('div');
+        previewItem.className = 'p-3 bg-white border border-red-200 rounded-lg text-sm';
+        previewItem.innerHTML = `
+            <div class="flex items-start justify-between">
+                <div class="flex-1">
+                    <p class="font-medium text-gray-800">
+                        <i class="fas fa-user text-indigo-600 mr-1"></i>
+                        ${escapeHtml(token.name)}
+                    </p>
+                    <p class="text-gray-600 font-mono text-xs mt-1 break-all">
+                        <i class="fas fa-key text-gray-400 mr-1"></i>
+                        ${escapeHtml(token.value)}
+                    </p>
+                    ${token.tag ? `<p class="text-xs mt-1"><span class="px-2 py-1 bg-gray-100 rounded">${escapeHtml(token.tag)}</span></p>` : ''}
+                    <p class="text-gray-500 text-xs mt-1">
+                        <i class="fas fa-calendar text-gray-400 mr-1"></i>
+                        ${new Date(token.createdAt).toLocaleString()}
+                    </p>
+                </div>
+                <span class="text-red-600 ml-2">
+                    <i class="fas fa-trash-alt"></i>
+                </span>
+            </div>
+        `;
+        deletePreviewList.appendChild(previewItem);
+    });
+    
+    bulkDeletePreview.classList.remove('hidden');
+    confirmBulkDeleteBtn.disabled = false;
+    
+    showStatus(`Found ${tokensToDelete.length} matching tokens! Review and confirm deletion`, 'info');
+}
+
+/**
+ * Confirm and delete matched tokens
+ */
+async function confirmBulkDelete() {
+    if (tokensToDelete.length === 0) {
+        showStatus('No tokens to delete!', 'error');
+        return;
+    }
+    
+    const confirmed = confirm(`⚠️ Are you sure you want to delete ${tokensToDelete.length} tokens?\n\nThis action cannot be undone!`);
+    
+    if (!confirmed) {
+        return;
+    }
+    
+    let deleted = 0;
+    let failed = 0;
+    
+    confirmBulkDeleteBtn.disabled = true;
+    confirmBulkDeleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Deleting...';
+    
+    for (const token of tokensToDelete) {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/tokens/${token.id}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                deleted++;
+            } else {
+                failed++;
+            }
+        } catch (error) {
+            console.error('Failed to delete token:', token, error);
+            failed++;
+        }
+    }
+    
+    // Reset button
+    confirmBulkDeleteBtn.disabled = false;
+    confirmBulkDeleteBtn.innerHTML = '<i class="fas fa-trash"></i><span>Delete Matched Tokens</span>';
+    
+    // Show results
+    let message = `Bulk delete complete! `;
+    if (deleted > 0) message += `✅ ${deleted} deleted`;
+    if (failed > 0) message += `, ❌ ${failed} failed`;
+    
+    showStatus(message, deleted > 0 ? 'success' : 'error');
+    
+    // Reload tokens and close delete section
+    await loadTokens();
+    hideBulkDelete();
+}
+
+/**
+ * Open Edit Modal
+ * @param {String} tokenId - Token ID to edit
+ */
+function openEditModal(tokenId) {
+    const token = tokens.find(t => t.id === tokenId);
+    if (!token) {
+        showStatus('Token not found', 'error');
+        return;
+    }
+    
+    currentEditingTokenId = tokenId;
+    
+    // Populate form fields
+    editNameInput.value = token.name;
+    editTokenInput.value = token.value;
+    editTagInput.value = token.tag || '';
+    
+    // Format date for datetime-local input (YYYY-MM-DDTHH:MM)
+    const date = new Date(token.createdAt);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    editDateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    // Show modal
+    editModal.classList.remove('hidden');
+    editNameInput.focus();
+}
+
+/**
+ * Close Edit Modal
+ */
+function closeEditModalHandler() {
+    editModal.classList.add('hidden');
+    currentEditingTokenId = null;
+    editTokenForm.reset();
+}
+
+/**
+ * Handle edit token form submission
+ * @param {Event} e - Form submit event
+ */
+async function handleEditToken(e) {
+    e.preventDefault();
+    
+    if (!currentEditingTokenId) {
+        showStatus('No token selected for editing', 'error');
+        return;
+    }
+    
+    const nameValue = editNameInput.value.trim();
+    const tokenValue = editTokenInput.value.trim();
+    const tagValue = editTagInput.value;
+    const dateValue = editDateInput.value;
+    
+    if (!nameValue || !tokenValue || !dateValue) {
+        showStatus('Please fill all required fields', 'error');
+        return;
+    }
+    
+    try {
+        saveEditBtn.disabled = true;
+        saveEditBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+        
+        // Convert datetime-local value to ISO string
+        const createdAt = new Date(dateValue).toISOString();
+        
+        const response = await fetch(`${API_BASE_URL}/api/tokens/${currentEditingTokenId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+                name: nameValue,
+                token: tokenValue,
+                tag: tagValue,
+                createdAt: createdAt
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showStatus('Token updated successfully!', 'success');
+            await loadTokens();
+            closeEditModalHandler();
+        } else {
+            throw new Error(data.message);
+        }
+    } catch (error) {
+        console.error('Error updating token:', error);
+        showStatus(`Failed to update token: ${error.message}`, 'error');
+    } finally {
+        saveEditBtn.disabled = false;
+        saveEditBtn.innerHTML = '<i class="fas fa-save mr-2"></i>Save Changes';
+    }
+}
+
 // Make functions available globally
 window.deleteToken = deleteToken;
 window.copyToClipboard = copyToClipboard;
@@ -1178,3 +1528,4 @@ window.clearSearch = clearSearch;
 window.toggleTokenSelection = toggleTokenSelection;
 window.exportToCSV = exportToCSV;
 window.exportToJSON = exportToJSON;
+window.openEditModal = openEditModal;
